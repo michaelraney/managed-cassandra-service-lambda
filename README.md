@@ -1,4 +1,4 @@
-# managed-cassandra-service-lambda
+AWS Managed Cassandra Service Lambda Examples
 Connect to AWS Managed Cassandra Service from Lambda Function
 
 ## Some key objectives of this example
