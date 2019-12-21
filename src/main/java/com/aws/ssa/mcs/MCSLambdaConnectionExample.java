@@ -32,7 +32,7 @@ public class MCSLambdaConnectionExample implements RequestHandler<Object, String
     public String handleRequest(Object input, Context context)  {
         context.getLogger().log("Input: " + input);
 
-        getSession().execute("CREATE KEYSPACE IF NOT EXISTS ht_test2 WITH replication = {'class': 'SingleRegionStrategy'}");
+        getSession().execute("CREATE KEYSPACE IF NOT EXISTS mykeyspace WITH replication = {'class': 'SingleRegionStrategy'}");
 
         return "Finish";
     }
