@@ -20,14 +20,26 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+/***
+ * This is an example of connecting to AWS Managed Cassandra Service from a Lambda Function.
+ * Some key objectives of this example
+ *      * How to Connect to MCS
+ *      * How to use Singleton to reuse Connection for many request
+ *      * How to load MCS Cert to Trust Store
+ *      * How to use Secret Manager to Retrieve UserName and Password
+ */
 public class MCSLambdaConnectionExample implements RequestHandler<Object, String> {
 
+    //Cassandra Session to be reused across invocations
     private Session session;
 
     public MCSLambdaConnectionExample(){
         session = getSession();
     }
 
+     /***
+     * Entry point for lambda function.
+     */
     @Override
     public String handleRequest(Object input, Context context)  {
         context.getLogger().log("Input: " + input);
@@ -37,8 +49,12 @@ public class MCSLambdaConnectionExample implements RequestHandler<Object, String
         return "Finish";
     }
 
-    //Singleton pattern.
-    //Connection session is thread safe and can be reused
+    /***
+     * Method to get or create a new session instance.
+     * Creating a connection to a database is an expensive operation
+     * we want to reuse the session across lambda invocations if possible.
+     * @return
+     */
     private Session getSession(){
         if(session == null){
             session = connectToAWSManagedCassandraService();
@@ -46,6 +62,12 @@ public class MCSLambdaConnectionExample implements RequestHandler<Object, String
         return session;
     }
 
+    /***
+     * Initializing a connection is required once. We perform synchronized method
+     * to allow only one thread to initialize the connection and creation of instance
+     * members
+     * @return Session
+     */
     private synchronized Session connectToAWSManagedCassandraService(){
 
         if(session == null) {
@@ -78,7 +100,11 @@ public class MCSLambdaConnectionExample implements RequestHandler<Object, String
         return session;
     }
 
-    // load SSL Cert to truststore
+   /***
+     * This helper functional will add cert to custom truststore
+     * required for ssl communication with Managed Cassandra Service
+     * @throws Exception
+     */
     private void loadManagedCassandraCert() throws Exception {
 
         //locate the default truststore
@@ -111,7 +137,12 @@ public class MCSLambdaConnectionExample implements RequestHandler<Object, String
         System.setProperty("javax.net.ssl.trustStore", certPath);
         System.setProperty("javax.net.ssl.trustStorePassword", trustStorePassword);
     }
-    //TODO:Retrieve PEM From S3 or Secret Manager
+    /***
+     * In this example we load cert from the jar directory,
+     * but you should load from S3 or Secret Manager
+     * @return
+     * @throws Exception
+     */
     private FileInputStream getPemFile() throws Exception{
         ClassLoader classLoader = getClass().getClassLoader();
 
@@ -125,9 +156,10 @@ public class MCSLambdaConnectionExample implements RequestHandler<Object, String
 
     }
 
-    // Get Secret from manager
-    // If you need more information about configurations or implementing the sample code, visit the AWS docs:
-    // https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/java-dg-samples.html#prerequisites
+     /*** Retrieve credentials from secret manager.
+       If you need more information about configurations or implementing the sample code, visit the AWS docs:
+      https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/java-dg-samples.html#prerequisites
+      ***/
     public static Map<String,String> getMCSCredentialsFromSecretManager() throws Exception{
 
         String secretName = "mcsCredentials";
